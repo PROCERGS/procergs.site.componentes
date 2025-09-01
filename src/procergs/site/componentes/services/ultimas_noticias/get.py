@@ -14,27 +14,36 @@ class UltimasNoticiasGet(Service):
             "portal_type": "News Item",
         }
 
-        sort_on = ["effective"]
+        b_start = int(request.form.get("b_start", 0))
+        b_size = int(request.form.get("b_size", 10))
+
+        sort_on = []
 
         indicador_manchete = request.form.get("manchete")
+        indicador_destaque = request.form.get("destaque")
+
+        # Prioritize 'manchete' first, then 'destaque', then 'effective'
         if indicador_manchete is not None and indicador_manchete.lower() in [
             "true",
             "1",
         ]:
-            sort_on = ["indicador_manchete", "effective"]
+            sort_on.append("indicador_manchete")
 
-        indicador_destaque = request.form.get("destaque")
         if indicador_destaque is not None and indicador_destaque.lower() in [
             "true",
             "1",
         ]:
-            sort_on = ["indicador_destaque", "effective"]
+            sort_on.append("indicador_destaque")
+
+        # Always sort by effective date last
+        sort_on.append("effective")
 
         results = catalog(
             **query,
             sort_on=sort_on,
             sort_order="descending",
-            b_size=3,
+            b_size=b_size,
+            b_start=b_start,
         )
 
         brains = [
@@ -45,5 +54,9 @@ class UltimasNoticiasGet(Service):
         return {
             "@id": self.context.absolute_url() + "/@ultimas_noticias",
             "items": brains,
-            "items_total": len(brains),
+            "items_total": catalog(
+                **query, sort_on=sort_on, sort_order="descending"
+            ).actual_result_count,
+            "b_start": b_start,
+            "b_size": b_size,
         }
