@@ -38,6 +38,10 @@ class UltimasNoticiasGet(Service):
         # Always sort by effective date last
         sort_on.append("effective")
 
+        itens = int(request.form.get("itens", 3))
+        if itens < 2 or itens > 4:
+            raise ValueError("O parâmetro 'itens' deve ser um número entre 2 e 4.")
+
         results = catalog(
             **query,
             sort_on=sort_on,
